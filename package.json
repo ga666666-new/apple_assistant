@@ -1,0 +1,17 @@
+{
+    "name": "apple-assistant",
+    "version": "0.1.0",
+    "description": "Apple Assistant Desktop Application",
+    "main": "dist/index.html",
+    "scripts": {
+        "tauri:dev": "tauri dev",
+        "tauri:build": "tauri build",
+        "tauri:build:debug": "tauri build --debug",
+        "tauri:build:mac": "tauri build --target aarch64-apple-darwin",
+        "tauri:build:windows": "tauri build --target x86_64-pc-windows-msvc",
+        "tauri:build:all": "tauri build --target all"
+    },
+    "devDependencies": {
+        "@tauri-apps/cli": "^1.5.0"
+    }
+}
