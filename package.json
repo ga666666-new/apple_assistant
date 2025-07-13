@@ -4,6 +4,7 @@
     "description": "Apple Assistant Desktop Application",
     "main": "dist/index.html",
     "scripts": {
+        "tauri": "tauri",
         "tauri:dev": "tauri dev",
         "tauri:build": "tauri build",
         "tauri:build:debug": "tauri build --debug",
