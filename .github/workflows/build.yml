@@ -45,20 +45,29 @@ jobs:
     - name: Build Tauri app
       run: npm run tauri:build
     
+    - name: Check build output (macOS)
+      if: matrix.platform == 'macos-latest'
+      run: |
+        echo "Checking macOS build output:"
+        find src-tauri/target/aarch64-apple-darwin/release/bundle -type f -name "*" || echo "No files found"
+    
+    - name: Check build output (Windows)
+      if: matrix.platform == 'windows-latest'
+      run: |
+        echo "Checking Windows build output:"
+        Get-ChildItem -Path "src-tauri\target\x86_64-pc-windows-msvc\release\bundle" -Recurse -File | Select-Object FullName
+      shell: powershell
+    
     - name: Upload macOS artifacts
       if: matrix.platform == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
         name: macos-build
-        path: |
-          src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
-          src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+        path: src-tauri/target/aarch64-apple-darwin/release/bundle/
     
     - name: Upload Windows artifacts
       if: matrix.platform == 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
         name: windows-build
-        path: |
-          src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
-          src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe 
+        path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/ 
