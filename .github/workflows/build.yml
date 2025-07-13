@@ -13,14 +13,12 @@ jobs:
     
     strategy:
       matrix:
-        platform: [macos-latest, windows-latest, ubuntu-latest]
+        platform: [macos-latest, windows-latest]
         include:
           - platform: macos-latest
             target: aarch64-apple-darwin
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
-          - platform: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
     
     steps:
     - uses: actions/checkout@v4
@@ -38,106 +36,29 @@ jobs:
         target: ${{ matrix.target }}
         override: true
     
-    - name: Install dependencies (Linux)
-      if: matrix.platform == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libwebkit2gtk-4.0-dev \
-          build-essential \
-          curl \
-          wget \
-          libssl-dev \
-          libgtk-3-dev \
-          libayatana-appindicator3-dev \
-          librsvg2-dev \
-          libgirepository1.0-dev \
-          libcairo2-dev \
-          libpango1.0-dev \
-          libatk1.0-dev \
-          libgdk-pixbuf2.0-dev \
-          libglib2.0-dev \
-          libgobject-2.0-dev
-    
-    - name: Install dependencies (macOS/Windows)
-      if: matrix.platform != 'ubuntu-latest'
+    - name: Install dependencies
       run: npm ci
     
     - name: Install Tauri CLI
       run: npm install -g @tauri-apps/cli
     
-    - name: Show environment info
-      run: |
-        echo "=== Environment Information ==="
-        echo "Platform: ${{ matrix.platform }}"
-        echo "Target: ${{ matrix.target }}"
-        echo "Node version: $(node --version)"
-        echo "NPM version: $(npm --version)"
-        echo "Rust version: $(rustc --version)"
-        echo "Tauri CLI version: $(tauri --version)"
-        echo "Current directory: $(pwd)"
-    
-    - name: Check dist directory
-      run: |
-        echo "=== Checking dist directory ==="
-        if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-          echo "Dist directory contents:"
-          dir dist
-          echo "Dist directory exists: $(Test-Path dist)"
-        else
-          echo "Dist directory contents:"
-          ls -la dist
-          echo "Dist directory exists: $(test -d dist && echo 'yes' || echo 'no')"
-        fi
-    
-    - name: Check Tauri configuration
-      run: |
-        echo "=== Checking Tauri configuration ==="
-        if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-          type src-tauri\tauri.conf.json
-        else
-          cat src-tauri/tauri.conf.json
-        fi
-    
     - name: Build Tauri app
       run: npm run tauri:build
-      env:
-        TARGET: ${{ matrix.target }}
     
-    - name: Check build output
-      run: |
-        echo "=== Build Output Check ==="
-        echo "Build completed for ${{ matrix.platform }}"
-        echo "Target: ${{ matrix.target }}"
-        echo "Checking target directory:"
-        if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-          echo "Release directory:"
-          dir src-tauri\target\${{ matrix.target }}\release
-          echo "Bundle directory check:"
-          if (Test-Path "src-tauri\target\${{ matrix.target }}\release\bundle") {
-            echo "Bundle directory exists, contents:"
-            dir src-tauri\target\${{ matrix.target }}\release\bundle
-          } else {
-            echo "Bundle directory not found"
-            echo "Available directories in release:"
-            Get-ChildItem "src-tauri\target\${{ matrix.target }}\release" -Directory
-          }
-        else
-          echo "Release directory:"
-          ls -la src-tauri/target/${{ matrix.target }}/release
-          echo "Bundle directory check:"
-          if [ -d "src-tauri/target/${{ matrix.target }}/release/bundle" ]; then
-            echo "Bundle directory exists, contents:"
-            ls -la src-tauri/target/${{ matrix.target }}/release/bundle/
-          else
-            echo "Bundle directory not found"
-            echo "Available directories in release:"
-            ls -d src-tauri/target/${{ matrix.target }}/release/*/
-          fi
-        fi
-    
-    - name: Upload artifacts
+    - name: Upload macOS artifacts
+      if: matrix.platform == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.platform }}-build
-        path: src-tauri/target/${{ matrix.target }}/release/bundle/
-        if-no-files-found: warn 
+        name: macos-build
+        path: |
+          src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+    
+    - name: Upload Windows artifacts
+      if: matrix.platform == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build
+        path: |
+          src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe 
