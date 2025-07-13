@@ -1,0 +1,1 @@
+import{d as o,u as a,T as r,a as s,o as n}from"./index-lNCLxOJp.js";const d=o({__name:"index",setup(c){const e=a(),t=r().params.path;return e.replace({path:t}),(p,_)=>(n(),s("div"))}});export{d as default};

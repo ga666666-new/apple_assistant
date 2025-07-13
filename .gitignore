@@ -12,7 +12,6 @@ src-tauri/target/
 src-tauri/Cargo.lock
 
 # Build outputs
-dist/
 build/
 out/
 
