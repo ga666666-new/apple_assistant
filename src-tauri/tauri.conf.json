@@ -31,7 +31,10 @@
         },
         "bundle": {
             "active": true,
-            "targets": "all",
+            "targets": [
+                "app",
+                "updater"
+            ],
             "identifier": "com.apple.assistant",
             "icon": [
                 "icons/icon.png"

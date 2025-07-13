@@ -1,0 +1,78 @@
+name: Build Windows Only
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: x86_64-pc-windows-msvc
+        override: true
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli
+    
+    - name: Show environment info
+      run: |
+        echo "=== Environment Information ==="
+        echo "Node version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        echo "Rust version: $(rustc --version)"
+        echo "Tauri CLI version: $(tauri --version)"
+        echo "Current directory: $(pwd)"
+    
+    - name: Check dist directory
+      run: |
+        echo "=== Checking dist directory ==="
+        echo "Dist directory contents:"
+        dir dist
+        echo "Dist directory exists: $(Test-Path dist)"
+    
+    - name: Check Tauri configuration
+      run: |
+        echo "=== Checking Tauri configuration ==="
+        type src-tauri\tauri.conf.json
+    
+    - name: Build Tauri app
+      run: npm run tauri:build
+      env:
+        TARGET: x86_64-pc-windows-msvc
+    
+    - name: Check build output
+      run: |
+        echo "=== Build Output Check ==="
+        echo "Release directory:"
+        dir src-tauri\target\x86_64-pc-windows-msvc\release
+        echo "Bundle directory check:"
+        if (Test-Path "src-tauri\target\x86_64-pc-windows-msvc\release\bundle") {
+          echo "Bundle directory exists, contents:"
+          dir src-tauri\target\x86_64-pc-windows-msvc\release\bundle
+        } else {
+          echo "Bundle directory not found"
+          echo "Available directories in release:"
+          Get-ChildItem "src-tauri\target\x86_64-pc-windows-msvc\release" -Directory
+        }
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build-debug
+        path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/
+        if-no-files-found: warn 
