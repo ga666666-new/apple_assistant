@@ -45,16 +45,28 @@ jobs:
     - name: Build Tauri app
       run: npm run tauri:build
     
-    - name: Check build output
+    - name: Check build output (macOS)
+      if: matrix.platform == 'macos-latest'
       run: |
-        echo "Checking build output:"
+        echo "Checking macOS build output:"
         if [ -d "src-tauri/target/release/bundle" ]; then
-          echo "Bundle directory found at src-tauri/target/release/bundle"
+          echo "Bundle directory found:"
           find src-tauri/target/release/bundle -type f -name "*"
         else
-          echo "Bundle directory not found, checking all target directories:"
-          find src-tauri/target -type f -name "*.app" -o -name "*.dmg" -o -name "*.exe" -o -name "*.msi" 2>/dev/null || echo "No app files found"
+          echo "Bundle directory not found"
         fi
+    
+    - name: Check build output (Windows)
+      if: matrix.platform == 'windows-latest'
+      run: |
+        echo "Checking Windows build output:"
+        if (Test-Path "src-tauri\target\release\bundle") {
+          echo "Bundle directory found:"
+          Get-ChildItem -Path "src-tauri\target\release\bundle" -Recurse -File | Select-Object FullName
+        } else {
+          echo "Bundle directory not found"
+        }
+      shell: powershell
     
     - name: Upload macOS artifacts
       if: matrix.platform == 'macos-latest'
