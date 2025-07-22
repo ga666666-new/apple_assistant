@@ -39,12 +39,26 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: List build outputs
+    - name: List build outputs (Unix)
+      if: matrix.os != 'windows-latest'
       run: |
         echo "=== Build outputs ==="
         find . -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" | head -20
         echo "=== Release directory ==="
         ls -la release/ || echo "Release directory not found"
+        
+    - name: List build outputs (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: powershell
+      run: |
+        Write-Host "=== Build outputs ==="
+        Get-ChildItem -Recurse -Include "*.dmg","*.zip","*.exe","*.msi","*.AppImage","*.deb" | Select-Object -First 20 | ForEach-Object { $_.FullName }
+        Write-Host "=== Release directory ==="
+        if (Test-Path "release") {
+          Get-ChildItem "release" -Force
+        } else {
+          Write-Host "Release directory not found"
+        }
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
@@ -71,7 +85,9 @@ jobs:
     - name: List downloaded artifacts
       run: |
         echo "=== Downloaded artifacts structure ==="
-        find artifacts -type f -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" | head -20
+        find artifacts -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.msi" -o -name "*.AppImage" -o -name "*.deb" \) | head -20
+        echo "=== Artifacts directory structure ==="
+        find artifacts -type d | head -10
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
