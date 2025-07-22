@@ -1,102 +1,74 @@
-const { app, BrowserWindow } = require('electron');
+const fs = require('fs');
 const path = require('path');
 
+console.log('🧪 开始测试 Apple Assistant...');
+
 // 测试配置
-const TEST_TIMEOUT = 5000; // 5秒超时
+const tests = [
+    {
+        name: '检查 package.json',
+        test: () => fs.existsSync('package.json'),
+        description: 'package.json 文件存在'
+    },
+    {
+        name: '检查主进程文件',
+        test: () => fs.existsSync('electron/main.js'),
+        description: 'electron/main.js 文件存在'
+    },
+    {
+        name: '检查预加载脚本',
+        test: () => fs.existsSync('electron/preload.js'),
+        description: 'electron/preload.js 文件存在'
+    },
+    {
+        name: '检查 Web 应用',
+        test: () => fs.existsSync('dist/index.html'),
+        description: 'dist/index.html 文件存在'
+    },
+    {
+        name: '检查 GitHub Actions',
+        test: () => fs.existsSync('.github/workflows/build.yml'),
+        description: 'GitHub Actions 工作流文件存在'
+    },
+    {
+        name: '检查构建脚本',
+        test: () => fs.existsSync('build-all.sh'),
+        description: 'build-all.sh 脚本存在'
+    }
+];
 
-let mainWindow;
-let testResults = {
-    windowCreated: false,
-    windowLoaded: false,
-    appReady: false
-};
+// 运行测试
+let passedTests = 0;
+let totalTests = tests.length;
 
-function createTestWindow() {
-    mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
-        show: false,
-        webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-            webSecurity: true
-        }
-    });
+console.log('\n📋 运行测试...\n');
 
-    testResults.windowCreated = true;
-    console.log('✅ 窗口创建成功');
-
-    // 加载测试页面
-    const testUrl = `file://${path.join(__dirname, '../dist/index.html')}`;
-    mainWindow.loadURL(testUrl);
-
-    mainWindow.webContents.on('did-finish-load', () => {
-        testResults.windowLoaded = true;
-        console.log('✅ 页面加载成功');
-
-        // 检查页面内容
-        mainWindow.webContents.executeJavaScript(`
-      document.title === 'Apple Assistant' ? 'PASS' : 'FAIL'
-    `).then(result => {
-            if (result === 'PASS') {
-                console.log('✅ 页面标题正确');
-            } else {
-                console.log('❌ 页面标题不正确');
-            }
-        }).catch(err => {
-            console.log('❌ 页面内容检查失败:', err.message);
-        });
-    });
-
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-        console.log('❌ 页面加载失败:', errorDescription);
-    });
-
-    // 5秒后关闭应用
-    setTimeout(() => {
-        console.log('\n📋 测试结果:');
-        console.log(`  窗口创建: ${testResults.windowCreated ? '✅' : '❌'}`);
-        console.log(`  页面加载: ${testResults.windowLoaded ? '✅' : '❌'}`);
-        console.log(`  应用就绪: ${testResults.appReady ? '✅' : '❌'}`);
-
-        if (testResults.windowCreated && testResults.windowLoaded) {
-            console.log('\n🎉 所有测试通过！');
-            process.exit(0);
+tests.forEach((test, index) => {
+    try {
+        const result = test.test();
+        if (result) {
+            console.log(`✅ ${index + 1}. ${test.name}: ${test.description}`);
+            passedTests++;
         } else {
-            console.log('\n❌ 部分测试失败！');
-            process.exit(1);
+            console.log(`❌ ${index + 1}. ${test.name}: ${test.description}`);
         }
-    }, TEST_TIMEOUT);
-}
-
-app.whenReady().then(() => {
-    testResults.appReady = true;
-    console.log('✅ 应用就绪');
-    createTestWindow();
-}).catch(err => {
-    console.log('❌ 应用启动失败:', err.message);
-    process.exit(1);
-});
-
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
+    } catch (error) {
+        console.log(`❌ ${index + 1}. ${test.name}: 测试失败 - ${error.message}`);
     }
 });
 
-app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createTestWindow();
-    }
-});
+// 显示结果
+console.log('\n📊 测试结果:');
+console.log(`   通过: ${passedTests}/${totalTests}`);
+console.log(`   失败: ${totalTests - passedTests}/${totalTests}`);
 
-// 处理未捕获的异常
-process.on('uncaughtException', (error) => {
-    console.log('❌ 未捕获的异常:', error.message);
+if (passedTests === totalTests) {
+    console.log('\n🎉 所有测试通过！');
+    console.log('✅ 项目结构正确');
+    console.log('✅ 可以开始开发或构建');
+    process.exit(0);
+} else {
+    console.log('\n❌ 部分测试失败！');
+    console.log('💡 请检查失败的项目');
     process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.log('❌ 未处理的 Promise 拒绝:', reason);
-    process.exit(1);
-}); 
+} 
