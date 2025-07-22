@@ -1,42 +1,52 @@
 #!/bin/bash
 
-# 设置环境变量
-export PATH="$HOME/.cargo/bin:$PATH"
+# Apple Assistant - 全平台构建脚本
+# 使用 Electron 构建跨平台桌面应用
 
-echo "🚀 开始跨平台构建 Apple Assistant..."
+set -e
 
-# 构建 macOS 版本
-echo "📱 构建 macOS 版本..."
-npm run tauri:build:mac
-if [ $? -eq 0 ]; then
-    echo "✅ macOS 构建成功！"
-else
-    echo "❌ macOS 构建失败！"
+echo "🚀 开始构建 Apple Assistant..."
+
+# 检查 Node.js 版本
+NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+if [ "$NODE_VERSION" -lt 18 ]; then
+    echo "❌ 错误: 需要 Node.js 18.x 或更高版本"
+    echo "当前版本: $(node --version)"
     exit 1
 fi
 
-# 构建 Windows 版本（使用 Cross）
+echo "✅ Node.js 版本检查通过: $(node --version)"
+
+# 安装依赖
+echo "📦 安装依赖..."
+npm ci
+
+# 清理之前的构建
+echo "🧹 清理之前的构建..."
+rm -rf release/
+
+# 构建所有平台
+echo "🔨 构建所有平台..."
+
+# macOS
+echo "🍎 构建 macOS 版本..."
+npm run build:mac
+
+# Windows
 echo "🪟 构建 Windows 版本..."
-echo "⚠️  注意：Windows 构建需要 Docker 环境"
-echo "💡 建议：使用 GitHub Actions 进行跨平台构建"
+npm run build:win
 
-cd src-tauri
-if command -v cross &> /dev/null; then
-    cross build --target x86_64-pc-windows-msvc --release
-    if [ $? -eq 0 ]; then
-        echo "✅ Windows 构建成功！"
-    else
-        echo "❌ Windows 构建失败！"
-        echo "💡 提示：请确保 Docker 已安装并运行"
-    fi
-else
-    echo "❌ Cross 工具未安装"
-    echo "💡 安装命令：cargo install cross"
-fi
-cd ..
+# Linux
+echo "🐧 构建 Linux 版本..."
+npm run build:linux
 
-echo "🎉 构建完成！"
+echo "✅ 构建完成！"
+
+# 显示构建结果
 echo ""
-echo "📦 构建产物位置："
-echo "  macOS: src-tauri/target/aarch64-apple-darwin/release/bundle/"
-echo "  Windows: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/" 
+echo "📁 构建产物:"
+ls -la release/
+
+echo ""
+echo "🎉 所有平台构建完成！"
+echo "📦 构建产物位于 release/ 目录" 

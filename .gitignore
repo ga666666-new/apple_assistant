@@ -5,11 +5,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Rust & Tauri
+# Rust & Tauri (legacy)
 target/
 Cargo.lock
 src-tauri/target/
 src-tauri/Cargo.lock
+
+# Electron
+release/
+dist_electron/
 
 # Build outputs
 build/
@@ -65,6 +69,8 @@ temp/
 !src-tauri/tauri.conf.json
 !src-tauri/build.rs
 !src-tauri/icons/
+!electron/
+!scripts/
 !package.json
 !README.md
 !.github/ 

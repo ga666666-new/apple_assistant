@@ -1,102 +1,139 @@
-# 🚀 Apple Assistant 快速开始
+# Apple Assistant - 快速开始指南
 
-## ✅ 立即可用
+## 🚀 快速开始
 
-你的 HTML 应用已经成功转换为桌面应用！以下是立即可用的功能：
-
-### 📱 macOS 版本（完全可用）
-
+### 1. 克隆项目
 ```bash
-# 开发模式（实时预览）
-npm run tauri:dev
-
-# 构建生产版本
-npm run tauri:build:mac
-
-# 运行应用
-open "src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Apple Assistant.app"
+git clone <your-repo-url>
+cd Apple-Assistant
 ```
 
-### 🎯 应用特性
-
-- ✅ **原生性能**: 使用 Rust 后端，启动快速
-- ✅ **小体积**: 仅 32MB，比 Electron 小很多
-- ✅ **窗口控制**: 最小尺寸 1000x750，可调整大小
-- ✅ **自定义图标**: 使用 `src-tauri/icons/icon.ico`
-- ✅ **跨平台架构**: 基于 Tauri 框架
-
-## 🔄 Windows 构建说明
-
-### 为什么在 macOS 上无法构建 Windows 版本？
-
-这是正常现象！在 macOS 上构建 Windows 应用需要：
-- Windows 链接器 (`link.exe`)
-- Visual Studio Build Tools
-- Windows 特定的编译环境
-
-### 解决方案
-
-#### 方案一：GitHub Actions（推荐）
+### 2. 安装依赖
 ```bash
-# 推送代码到 GitHub
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin <your-repo-url>
-git push -u origin main
-
-# GitHub Actions 会自动构建所有平台
-```
-
-#### 方案二：在 Windows 机器上构建
-```bash
-# 在 Windows 机器上
 npm install
-npm run tauri:build
 ```
 
-## 📦 分发文件
-
-### macOS 用户
-- **开发测试**: `Apple Assistant.app`
-- **用户分发**: `Apple Assistant_0.1.0_aarch64.dmg`
-
-### 文件位置
-```
-src-tauri/target/aarch64-apple-darwin/release/bundle/
-├── macos/Apple Assistant.app
-└── dmg/Apple Assistant_0.1.0_aarch64.dmg
+### 3. 开发模式
+```bash
+npm run dev
 ```
 
-## 🎉 项目状态
+### 4. 构建应用
+```bash
+npm run build
+```
 
-### ✅ 已完成
-- HTML 应用转换为桌面应用
-- macOS 版本完全可用
-- 窗口配置优化
-- 开发环境配置
+## 📦 构建选项
 
-### 🔄 可选扩展
-- Windows 版本构建
-- Linux 版本构建
-- 应用商店发布
+### 构建所有平台
+```bash
+npm run build:all
+```
 
-## 💡 使用建议
+### 构建特定平台
+```bash
+# macOS
+npm run build:mac
 
-1. **立即使用**: macOS 版本已完全可用
-2. **用户测试**: 分发 `.dmg` 文件给用户
-3. **收集反馈**: 根据用户反馈优化
-4. **后续扩展**: 使用 GitHub Actions 添加其他平台
+# Windows
+npm run build:win
 
-## 🎊 成功！
+# Linux
+npm run build:linux
+```
 
-你的 `dist` 文件夹中的 HTML 应用现在已经是一个专业的桌面应用了！
+## 🔧 开发工具
 
-- ✅ **主要目标达成**: HTML → 桌面应用
-- ✅ **完全可用**: macOS 版本可直接分发
-- ✅ **专业品质**: 原生性能，小体积
-- ✅ **用户友好**: 现代化界面，原生体验
+### 直接启动 Electron
+```bash
+npm start
+```
 
----
+### 打包应用（不创建安装包）
+```bash
+npm run pack
+```
 
-**Windows 构建只是时间问题，核心功能已经完成！** 🎉 
+## 📱 支持的平台
+
+- ✅ **macOS**: `.dmg` 安装包，`.zip` 压缩包
+- ✅ **Windows**: `.exe` 安装包，便携版
+- ✅ **Linux**: `.AppImage`，`.deb` 包
+
+## 🏗️ 项目结构
+
+```
+Apple Assistant/
+├── dist/              # Web 应用构建产物
+├── electron/          # Electron 主进程
+│   ├── main.js       # 主进程入口
+│   ├── preload.js    # 预加载脚本
+│   └── icons/        # 应用图标
+├── scripts/          # 构建脚本
+├── .github/          # GitHub Actions
+└── package.json      # 项目配置
+```
+
+## 🔄 GitHub Actions
+
+项目配置了自动构建和发布：
+
+1. **触发条件**: 推送 `v*` 标签
+2. **构建平台**: Windows, macOS, Linux
+3. **自动发布**: 创建 GitHub Release
+
+### 发布新版本
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+## 🛠️ 开发注意事项
+
+### 主进程和渲染进程通信
+```javascript
+// 在渲染进程中
+window.electronAPI.sendMessage('Hello from renderer');
+
+// 在预加载脚本中定义 API
+contextBridge.exposeInMainWorld('electronAPI', {
+  sendMessage: (message) => ipcRenderer.send('message', message)
+});
+```
+
+### 安全配置
+- `nodeIntegration: false` - 禁用 Node.js 集成
+- `contextIsolation: true` - 启用上下文隔离
+- `webSecurity: true` - 启用 Web 安全
+
+## 📋 常用命令
+
+| 命令 | 描述 |
+|------|------|
+| `npm run dev` | 开发模式启动 |
+| `npm start` | 直接启动 Electron |
+| `npm run build` | 构建生产版本 |
+| `npm run build:all` | 构建所有平台 |
+| `npm run pack` | 打包应用 |
+
+## 🐛 故障排除
+
+### 常见问题
+
+1. **构建失败**
+   - 检查 Node.js 版本（需要 18.x+）
+   - 清理 `node_modules` 重新安装
+
+2. **图标不显示**
+   - 确保图标文件存在于 `electron/icons/` 目录
+   - 检查图标文件格式和大小
+
+3. **权限问题**
+   - macOS: 在系统偏好设置中允许应用运行
+   - Windows: 以管理员身份运行
+
+## 📚 相关资源
+
+- [Electron 官方文档](https://www.electronjs.org/docs)
+- [electron-builder 文档](https://www.electron.build/)
+- [GitHub Actions 文档](https://docs.github.com/en/actions) 

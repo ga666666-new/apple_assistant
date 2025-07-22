@@ -1,87 +1,75 @@
-name: Build Tauri App
+name: Build and Release
 
 on:
   push:
-    branches: [ main, master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
     
     strategy:
       matrix:
-        platform: [macos-latest, windows-latest]
-        include:
-          - platform: macos-latest
-            target: aarch64-apple-darwin
-          - platform: windows-latest
-            target: x86_64-pc-windows-msvc
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        node-version: [18.x]
     
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    
-    - name: Setup Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: ${{ matrix.target }}
-        override: true
-    
+        
     - name: Install dependencies
       run: npm ci
-    
-    - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli
-    
-    - name: Build Tauri app
-      run: npm run tauri:build
-    
-    - name: Check build output (macOS)
-      if: matrix.platform == 'macos-latest'
-      run: |
-        echo "Checking macOS build output:"
-        if [ -d "src-tauri/target/release/bundle" ]; then
-          echo "Bundle directory found:"
-          find src-tauri/target/release/bundle -type f -name "*"
-        else
-          echo "Bundle directory not found"
-        fi
-    
-    - name: Check build output (Windows)
-      if: matrix.platform == 'windows-latest'
-      run: |
-        echo "Checking Windows build output:"
-        if (Test-Path "src-tauri\target\release\bundle") {
-          echo "Bundle directory found:"
-          Get-ChildItem -Path "src-tauri\target\release\bundle" -Recurse -File | Select-Object FullName
-        } else {
-          echo "Bundle directory not found"
-        }
-      shell: powershell
-    
-    - name: Upload macOS artifacts
-      if: matrix.platform == 'macos-latest'
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Build Electron app
+      run: npm run build:electron
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: macos-build
+        name: apple-assistant-${{ matrix.os }}
         path: |
-          src-tauri/target/release/bundle/dmg/*.dmg
-          src-tauri/target/release/bundle/macos/*.app
+          release/
+          !release/node_modules/
+          
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
     
-    - name: Upload Windows artifacts
-      if: matrix.platform == 'windows-latest'
-      uses: actions/upload-artifact@v4
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
       with:
-        name: windows-build
-        path: |
-          src-tauri/target/release/bundle/msi/*.msi
-          src-tauri/target/release/bundle/nsis/*.exe 
+        path: artifacts
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/apple-assistant-macos-latest/release/*.dmg
+          artifacts/apple-assistant-macos-latest/release/*.zip
+          artifacts/apple-assistant-ubuntu-latest/release/*.AppImage
+          artifacts/apple-assistant-ubuntu-latest/release/*.deb
+          artifacts/apple-assistant-windows-latest/release/*.exe
+          artifacts/apple-assistant-windows-latest/release/*.msi
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
